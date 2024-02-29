@@ -2,6 +2,9 @@
 
 #include <limits>
 #include <stdexcept>
+#include <fstream>
+#include <string>
+#include <iostream>
 
 #include "loss_queue.hh"
 #include "timestamp.hh"
@@ -38,6 +41,72 @@ bool IIDLoss::drop_packet( const string & packet __attribute((unused)) )
 }
 
 static const double MS_PER_SECOND = 1000.0;
+
+TraceLoss::TraceLoss( const bool drop_direction, const string & filename )
+    : schedule_(),
+      drop_dist_(),
+      drop_direction_( drop_direction ),
+      base_timestamp_( timestamp() ),
+      next_delivery_( 0 )
+      
+{
+    if ( !drop_direction_ ) {
+        return ;
+    }
+
+    ifstream trace_file( filename );
+
+    if ( not trace_file.good() ) {
+        throw runtime_error( filename + ": error opening for reading" );
+    }
+
+    string line;
+
+    while ( trace_file.good() and getline( trace_file, line ) ) {
+        if ( line.empty() ) {
+            throw runtime_error( filename + ": invalid empty line" );
+        }
+
+        const size_t space = line.find( ',' );
+
+        if ( space == string::npos ) {
+            throw runtime_error( filename + ": invalid line: " + line );
+        }
+
+        const uint64_t ms = stoull( line.substr( 0, space ) );
+        const float loss_rate = stof( line.substr( space + 1 ) );
+
+        schedule_.emplace_back( ms );
+        drop_dist_.emplace_back( std::bernoulli_distribution(loss_rate) );
+    }
+
+    if ( schedule_.empty() ) {
+        throw runtime_error( filename + ": no valid trace data found" );
+    }
+}
+
+bool TraceLoss::drop_packet( const string & packet __attribute((unused)) )
+{
+    if ( !drop_direction_ ) {
+        return false;
+    }
+    const uint64_t now = timestamp();
+    const uint64_t elapsed = now - base_timestamp_;
+    uint64_t trace_timestamp = schedule_.at(next_delivery_);
+    bool res;
+
+    if ( elapsed <= trace_timestamp) {
+        res = (drop_dist_.at(next_delivery_))( prng_);
+        return res;
+    } else {
+        next_delivery_ = (next_delivery_ + 1) % schedule_.size();
+        if ( next_delivery_ == 0 ) {
+            base_timestamp_ = now;
+        }
+        res = (drop_dist_.at(next_delivery_))( prng_);
+        return res;
+    }
+}
 
 StochasticSwitchingLink::StochasticSwitchingLink( const double mean_on_time, const double mean_off_time )
     : link_is_on_( false ),

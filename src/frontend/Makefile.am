@@ -11,6 +11,11 @@ mm_loss_SOURCES = lossshell.cc loss_queue.hh loss_queue.cc
 mm_loss_LDADD = -lrt ../util/libutil.a ../packet/libpacket.a
 mm_loss_LDFLAGS = -pthread
 
+bin_PROGRAMS += mm-loss-trace
+mm_loss_trace_SOURCES = losstraceshell.cc loss_queue.hh loss_queue.cc
+mm_loss_trace_LDADD = -lrt ../util/libutil.a ../packet/libpacket.a
+mm_loss_trace_LDFLAGS = -pthread
+
 bin_PROGRAMS += mm-onoff
 mm_onoff_SOURCES = onoffshell.cc loss_queue.hh loss_queue.cc
 mm_onoff_LDADD = -lrt ../util/libutil.a ../packet/libpacket.a
@@ -56,6 +61,8 @@ install-exec-hook:
 	chmod u+s $(DESTDIR)$(bindir)/mm-delay
 	chown root $(DESTDIR)$(bindir)/mm-loss
 	chmod u+s $(DESTDIR)$(bindir)/mm-loss
+	chown root $(DESTDIR)$(bindir)/mm-loss-trace
+	chmod u+s $(DESTDIR)$(bindir)/mm-loss-trace
 	chown root $(DESTDIR)$(bindir)/mm-onoff
 	chmod u+s $(DESTDIR)$(bindir)/mm-onoff
 	chown root $(DESTDIR)$(bindir)/mm-intermittent

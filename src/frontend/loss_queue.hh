@@ -46,6 +46,22 @@ public:
     IIDLoss( const double loss_rate ) : drop_dist_( loss_rate ) {}
 };
 
+class TraceLoss : public LossQueue
+{
+private:
+    std::vector<uint64_t> schedule_;
+    std::vector<std::bernoulli_distribution> drop_dist_;
+    bool drop_direction_;
+    uint64_t base_timestamp_;
+    unsigned int next_delivery_;
+
+    bool drop_packet( const std::string & packet ) override;
+
+public:
+    TraceLoss(const bool drop_direction, const std::string & filename );
+
+}; 
+
 class StochasticSwitchingLink : public LossQueue
 {
 private:
