@@ -21,6 +21,9 @@ protected:
     std::default_random_engine prng_;
 
 public:
+    bool ready_ = false;
+    bool reset_time_stamp_ = false;
+
     LossQueue();
     virtual ~LossQueue() {}
 
@@ -31,6 +34,8 @@ public:
     unsigned int wait_time( void );
 
     bool pending_output( void ) const { return not packet_queue_.empty(); }
+
+    bool check( void );
 
     static bool finished( void ) { return false; }
 };
