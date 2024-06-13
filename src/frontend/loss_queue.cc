@@ -135,7 +135,7 @@ bool TraceLoss::drop_packet( const string & packet __attribute((unused)) )
     uint64_t trace_timestamp = schedule_.at(next_delivery_);
     bool res;
 
-    if ( reset_cnt_ == 21 ) {
+    if ( reset_cnt_ == 41 ) {
         srand(0);
         reset_cnt_ = 0;
     }
