@@ -57,6 +57,8 @@ public:
 
     int wait_for_exit( void );
 
+    const Address & egress_addr_pub( void ) { return egress_ingress.first; }
+
     PacketShell( const PacketShell & other ) = delete;
     PacketShell & operator=( const PacketShell & other ) = delete;
 };

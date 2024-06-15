@@ -39,15 +39,17 @@ int main( int argc, char *argv[] )
 
         const option command_line_options[] = {
             { "trace-file",           required_argument, nullptr, 't' },
+            { "configure-file",       required_argument, nullptr, 'c' },
             { 0,                                      0, nullptr, 0 }
         };
 
         string link = argv[ 1 ];
         string trace_file;
+        string configure_file;
         bool drop_uplink = false, drop_downlink = false;
 
         while ( true ) {
-            const int opt = getopt_long( argc, argv, "t:", command_line_options, nullptr );
+            const int opt = getopt_long( argc, argv, "t:c:", command_line_options, nullptr );
             if ( opt == -1 ) { /* end of options */
                 break;
             }
@@ -55,6 +57,9 @@ int main( int argc, char *argv[] )
             switch ( opt ) {
             case 't':
                 trace_file = optarg;
+                break;
+            case 'c':
+                configure_file = optarg;
                 break;
             case '?':
                 usage_error( argv[ 0 ] );
@@ -76,15 +81,21 @@ int main( int argc, char *argv[] )
 
         vector<string> command;
 
-        if ( argc == 3 ) {
+        cout << argc << endl;
+
+        if ( argc == 4 ) {
             command.push_back( shell_path() );
         } else {
-            for ( int i = 3; i < argc; i++ ) {
+            for ( int i = 4; i < argc; i++ ) {
                 command.push_back( argv[ i ] );
             }
         }
 
         PacketShell<TraceLoss> loss_app( "loss", user_environment, passthrough_until_signal );
+
+        FILE * file = fopen( configure_file.c_str(), "w" );
+        fprintf( file, "%s\n", loss_app.egress_addr_pub().ip().c_str() );
+        fclose( file );
 
         string shell_prefix = "[loss ";
         if ( link == "uplink" ) {
