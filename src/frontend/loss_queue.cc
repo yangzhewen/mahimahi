@@ -5,7 +5,6 @@
 #include <fstream>
 #include <string>
 #include <iostream>
-#include <unistd.h>
 
 #include "loss_queue.hh"
 #include "timestamp.hh"
@@ -16,29 +15,8 @@ LossQueue::LossQueue()
     : prng_( random_device()() )
 {}
 
-bool LossQueue::check()
-{
-    if ( access( "/home/lw/code/sparkrtc/my_experiment/file/start_server", F_OK) == 0) {
-        if ( !ready_ ) {
-            ready_ = true;
-            reset_time_stamp_ = true;
-            reset_cnt_++;
-        }
-        return true;
-    } else {
-        if ( ready_ ) {
-            ready_ = false;
-        }
-        return false;
-    }
-}
-
 void LossQueue::read_packet( const string & contents )
 {
-    if ( not check()) {
-        return;
-    }
-
     if ( not drop_packet( contents ) ) {
         packet_queue_.emplace( contents );
     }
@@ -124,21 +102,10 @@ bool TraceLoss::drop_packet( const string & packet __attribute((unused)) )
         return false;
     }
 
-    if ( reset_time_stamp_ ) {
-        base_timestamp_ = timestamp();
-        next_delivery_ = 0;
-        reset_time_stamp_ = false;
-    }
-
     const uint64_t now = timestamp();
     const uint64_t elapsed = now - base_timestamp_;
     uint64_t trace_timestamp = schedule_.at(next_delivery_);
     bool res;
-
-    if ( reset_cnt_ == 41 ) {
-        srand(0);
-        reset_cnt_ = 0;
-    }
 
     if ( elapsed <= trace_timestamp) {
         res = gen_random_pkt(next_delivery_);
