@@ -42,13 +42,15 @@ bool IIDLoss::drop_packet( const string & packet __attribute((unused)) )
 
 static const double MS_PER_SECOND = 1000.0;
 
-TraceLoss::TraceLoss( const bool drop_direction, const string & filename )
+TraceLoss::TraceLoss( const bool drop_direction, const string & filename, const string & loss_type)
     : schedule_(),
       loss_rate_(),
       drop_dist_(),
       drop_direction_( drop_direction ),
       base_timestamp_( timestamp() ),
-      next_delivery_( 0 )
+      next_delivery_( 0 ),
+      loss_type_(loss_type),
+      pkt_cnt_(0)
       
 {
     if ( !drop_direction_ ) {
@@ -87,6 +89,7 @@ TraceLoss::TraceLoss( const bool drop_direction, const string & filename )
     }
 
     srand(0);
+    pkt_cnt_ = 0;
 }
 
 bool TraceLoss::gen_random_pkt( int schedule )
@@ -101,23 +104,63 @@ bool TraceLoss::drop_packet( const string & packet __attribute((unused)) )
     if ( !drop_direction_ ) {
         return false;
     }
+    pkt_cnt_+=1;
 
     const uint64_t now = timestamp();
     const uint64_t elapsed = now - base_timestamp_;
     uint64_t trace_timestamp = schedule_.at(next_delivery_);
-    bool res;
-
-    if ( elapsed <= trace_timestamp) {
-        res = gen_random_pkt(next_delivery_);
-        return res;
-    } else {
-        next_delivery_ = (next_delivery_ + 1) % schedule_.size();
-        if ( next_delivery_ == 0 ) {
-            base_timestamp_ = now;
+    bool res=false;
+    if ( loss_type_ == "None" ) {
+        if ( elapsed <= trace_timestamp) {
+            res = gen_random_pkt(next_delivery_);
+            return res;
+        } else {
+            next_delivery_ = (next_delivery_ + 1) % schedule_.size();
+            if ( next_delivery_ == 0 ) {
+                base_timestamp_ = now;
+            }
+            res = gen_random_pkt(next_delivery_);
+            return res;
         }
-        res = gen_random_pkt(next_delivery_);
-        return res;
     }
+    else if ( loss_type_ == "fixed" ) {
+        if (elapsed <= trace_timestamp) {
+            int loss_rate = loss_rate_.at(next_delivery_);
+            if (loss_rate == 0) {
+                res = false;
+                return res;
+            }
+            double lost_data=static_cast<double>(loss_rate)/100;
+            loss_rate = static_cast<int>(1.0/lost_data);
+            // std::cout << "loss_freq: " << loss_rate << std::endl;
+            if (pkt_cnt_ % loss_rate == 0) {
+                res = true;
+                return res;
+            } else {
+                return false;
+            }
+        } else {
+            next_delivery_ = (next_delivery_ + 1) % schedule_.size();
+            if (next_delivery_ == 0) {
+                base_timestamp_ = now;
+            }
+            int loss_rate = loss_rate_.at(next_delivery_);
+            if (loss_rate == 0) {
+                res = false;
+                return res;
+            }
+            double lost_data=static_cast<double>(loss_rate)/100;
+            loss_rate = static_cast<int>(1.0/lost_data);
+            if (pkt_cnt_ % loss_rate == 0) {
+                res = true;
+                return res;
+            } else {
+                return false;
+            }
+        }
+    }
+    return res;
+    // return false;
 }
 
 StochasticSwitchingLink::StochasticSwitchingLink( const double mean_on_time, const double mean_off_time )

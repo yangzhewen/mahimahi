@@ -18,6 +18,7 @@ void usage_error( const string & program_name )
     cerr << "Usage: " + program_name + " downlink|uplink [OPTION]" << endl;
     cerr << endl;
     cerr << "Options = --trace-file=FILENAME" << endl;
+    cerr << "Options = --trace-type=fixed" << endl;
 
     throw runtime_error( "invalid arguments" );
 }
@@ -39,15 +40,17 @@ int main( int argc, char *argv[] )
 
         const option command_line_options[] = {
             { "trace-file",           required_argument, nullptr, 't' },
+            { "trace-type",           required_argument, nullptr, 'T' },
             { 0,                                      0, nullptr, 0 }
         };
 
         string link = argv[ 1 ];
         string trace_file;
+        string trace_type="None";
         bool drop_uplink = false, drop_downlink = false;
 
         while ( true ) {
-            const int opt = getopt_long( argc, argv, "t:", command_line_options, nullptr );
+            const int opt = getopt_long( argc, argv, "t:T:", command_line_options, nullptr );
             if ( opt == -1 ) { /* end of options */
                 break;
             }
@@ -56,12 +59,20 @@ int main( int argc, char *argv[] )
             case 't':
                 trace_file = optarg;
                 break;
+            case 'T':
+                trace_type = optarg;
+                std::cout << "trace_type: " << trace_type << std::endl;
+                break;
             case '?':
                 usage_error( argv[ 0 ] );
                 break;
             default:
                 throw runtime_error( "getopt_long: unexpected return value " + to_string( opt ) );
             }
+        }
+
+        if ( trace_type != "fixed" and trace_type != "None" ) {
+            throw runtime_error( "unexpected trace_type value: " +  trace_type );
         }
 
         if ( link != "uplink" and link != "downlink" ) {
@@ -76,10 +87,10 @@ int main( int argc, char *argv[] )
 
         vector<string> command;
 
-        if ( argc == 3 ) {
+        if ( argc == 4 || argc ==3) {
             command.push_back( shell_path() );
         } else {
-            for ( int i = 3; i < argc; i++ ) {
+            for ( int i = 4; i < argc; i++ ) {
                 command.push_back( argv[ i ] );
             }
         }
@@ -94,6 +105,14 @@ int main( int argc, char *argv[] )
         }
 
         shell_prefix += "trace-file] ";
+
+        if ( trace_type == "fixed" ) {
+            loss_app.start_uplink( shell_prefix,
+                                   command,
+                                   drop_uplink, trace_file, trace_type);
+            loss_app.start_downlink(drop_downlink, trace_file, trace_type);
+            return loss_app.wait_for_exit();
+        }
 
         loss_app.start_uplink( shell_prefix,
                                command,

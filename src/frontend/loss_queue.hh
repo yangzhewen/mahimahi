@@ -55,12 +55,14 @@ private:
     bool drop_direction_;
     uint64_t base_timestamp_;
     unsigned int next_delivery_;
+    std::string loss_type_= "None";
+    uint64_t pkt_cnt_=0;
 
     bool drop_packet( const std::string & packet ) override;
     bool gen_random_pkt( int schedule );
 
 public:
-    TraceLoss(const bool drop_direction, const std::string & filename );
+    TraceLoss(const bool drop_direction, const std::string & filename, const std::string & loss_type="None");
 
 }; 
 
