@@ -22,7 +22,6 @@ bool LossQueue::check()
         if ( !ready_ ) {
             ready_ = true;
             reset_time_stamp_ = true;
-            reset_cnt_++;
         }
         return true;
     } else {
@@ -66,7 +65,6 @@ static const double MS_PER_SECOND = 1000.0;
 
 TraceLoss::TraceLoss( const bool drop_direction, const string & filename )
     : schedule_(),
-      loss_rate_(),
       drop_dist_(),
       drop_direction_( drop_direction ),
       base_timestamp_( timestamp() ),
@@ -100,22 +98,12 @@ TraceLoss::TraceLoss( const bool drop_direction, const string & filename )
         const float loss_rate = stof( line.substr( space + 1 ) );
 
         schedule_.emplace_back( ms );
-        loss_rate_.emplace_back( loss_rate * 100 );
         drop_dist_.emplace_back( std::bernoulli_distribution(loss_rate) );
     }
 
     if ( schedule_.empty() ) {
         throw runtime_error( filename + ": no valid trace data found" );
     }
-
-    srand(0);
-}
-
-bool TraceLoss::gen_random_pkt( int schedule )
-{
-    int loss_rate = loss_rate_.at(schedule);
-    int random = (rand() % 100) + 1;
-    return random <= loss_rate;
 }
 
 bool TraceLoss::drop_packet( const string & packet __attribute((unused)) )
@@ -135,20 +123,15 @@ bool TraceLoss::drop_packet( const string & packet __attribute((unused)) )
     uint64_t trace_timestamp = schedule_.at(next_delivery_);
     bool res;
 
-    if ( reset_cnt_ == 21 ) {
-        srand(0);
-        reset_cnt_ = 0;
-    }
-
     if ( elapsed <= trace_timestamp) {
-        res = gen_random_pkt(next_delivery_);
+        res = (drop_dist_.at(next_delivery_))( prng_);
         return res;
     } else {
         next_delivery_ = (next_delivery_ + 1) % schedule_.size();
         if ( next_delivery_ == 0 ) {
             base_timestamp_ = now;
         }
-        res = gen_random_pkt(next_delivery_);
+        res = (drop_dist_.at(next_delivery_))( prng_);
         return res;
     }
 }

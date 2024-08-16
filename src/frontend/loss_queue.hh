@@ -23,7 +23,6 @@ protected:
 public:
     bool ready_ = false;
     bool reset_time_stamp_ = false;
-    int  reset_cnt_ = 0; 
 
     LossQueue();
     virtual ~LossQueue() {}
@@ -56,14 +55,12 @@ class TraceLoss : public LossQueue
 {
 private:
     std::vector<uint64_t> schedule_;
-    std::vector<int> loss_rate_;
     std::vector<std::bernoulli_distribution> drop_dist_;
     bool drop_direction_;
     uint64_t base_timestamp_;
     unsigned int next_delivery_;
 
     bool drop_packet( const std::string & packet ) override;
-    bool gen_random_pkt( int schedule );
 
 public:
     TraceLoss(const bool drop_direction, const std::string & filename );
