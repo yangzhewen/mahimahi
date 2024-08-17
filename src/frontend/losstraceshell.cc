@@ -49,7 +49,7 @@ int main( int argc, char *argv[] )
         string link = argv[ 1 ];
         string trace_file;
         string configure_file;
-        bool drop_uplink = false, drop_downlink = false;
+        bool drop_uplink = false, drop_downlink = false, configure = false;
 
         while ( true ) {
             const int opt = getopt_long( argc, argv, "t:c:", command_line_options, nullptr );
@@ -63,6 +63,7 @@ int main( int argc, char *argv[] )
                 break;
             case 'c':
                 configure_file = optarg;
+                configure = true;
                 break;
             case '?':
                 usage_error( argv[ 0 ] );
@@ -84,11 +85,21 @@ int main( int argc, char *argv[] )
 
         vector<string> command;
 
-        if ( argc <= 4 ) {
-            command.push_back( shell_path() );
+        if ( configure ) {
+            if ( argc <= 4 ) {
+                command.push_back( shell_path() );
+            } else {
+                for ( int i = 4; i < argc; i++ ) {
+                    command.push_back( argv[ i ] );
+                }
+            }
         } else {
-            for ( int i = 4; i < argc; i++ ) {
-                command.push_back( argv[ i ] );
+            if ( argc <= 3 ) {
+                command.push_back( shell_path() );
+            } else {
+                for ( int i = 3; i < argc; i++ ) {
+                    command.push_back( argv[ i ] );
+                }
             }
         }
 

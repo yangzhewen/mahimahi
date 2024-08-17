@@ -15,9 +15,9 @@ using namespace std;
 
 void usage_error( const string & program_name )
 {
-    cerr << "Usage: " + program_name + " [OPTION]" << endl;
+    cerr << "Usage: " + program_name + " [PATH]" << endl;
     cerr << endl;
-    cerr << "Options = --trace-file=FILENAME" << endl;
+    cerr << "PATH := TRACE_FILENAME" << endl;
     cerr << "Trace format: timestamp,delay(half rtt)" << endl;
 
     throw runtime_error( "invalid arguments" );
@@ -38,28 +38,7 @@ int main( int argc, char *argv[] )
             usage_error( argv[ 0 ] );
         }
 
-        const option command_line_options[] = {
-            { "trace-file",           required_argument, nullptr, 't' },
-            { 0,                                      0, nullptr, 0 }
-        };
-
-        string trace_file;
-
-        while ( true ) {
-            const int opt = getopt_long( argc, argv, "t:", command_line_options, nullptr );
-            if ( opt == -1 ) { /* end of options */
-                break;
-            }
-
-            switch ( opt ) {
-            case 't':
-                trace_file = optarg;
-                break;
-            case '?':
-            default:
-                throw runtime_error( "getopt_long: unexpected return value " + to_string( opt ) );
-            }
-        }
+        string trace_file = argv[ 1 ];
 
         vector< string > command;
 
