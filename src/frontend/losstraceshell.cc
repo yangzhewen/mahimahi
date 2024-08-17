@@ -17,8 +17,8 @@ void usage_error( const string & program_name )
 {
     cerr << "Usage: " + program_name + " downlink|uplink [OPTION]" << endl;
     cerr << endl;
-    cerr << "Options = --trace-file=FILENAME" << endl;
-    cerr << "Options = --configure-file=FILENAME" << endl;
+    cerr << "Options = --trace-file=FILENAME (required)" << endl;
+    cerr << "Options = --configure-file=FILENAME (optional)" << endl;
     cerr << "Trace format: timestamp,delay(half rtt)" << endl;
     cerr << "Configure file: the webrtc server will save the ip to the file" << endl;
 
@@ -36,13 +36,13 @@ int main( int argc, char *argv[] )
 
         check_requirements( argc, argv );
 
-        if ( argc < 4 ) {
+        if ( argc < 3 ) {
             usage_error( argv[ 0 ] );
         }
 
         const option command_line_options[] = {
             { "trace-file",           required_argument, nullptr, 't' },
-            { "configure-file",       required_argument, nullptr, 'c' },
+            { "configure-file",       optional_argument, nullptr, 'c' },
             { 0,                                      0, nullptr, 0 }
         };
 
@@ -84,7 +84,7 @@ int main( int argc, char *argv[] )
 
         vector<string> command;
 
-        if ( argc == 4 ) {
+        if ( argc <= 4 ) {
             command.push_back( shell_path() );
         } else {
             for ( int i = 4; i < argc; i++ ) {
@@ -94,9 +94,11 @@ int main( int argc, char *argv[] )
 
         PacketShell<TraceLoss> loss_app( "loss", user_environment, passthrough_until_signal );
 
-        FILE * file = fopen( configure_file.c_str(), "w" );
-        fprintf( file, "%s\n", loss_app.egress_addr_pub().ip().c_str() );
-        fclose( file );
+        if ( argc == 4) {
+            FILE * file = fopen( configure_file.c_str(), "w" );
+            fprintf( file, "%s\n", loss_app.egress_addr_pub().ip().c_str() );
+            fclose( file );
+        }
 
         string shell_prefix = "[loss ";
         if ( link == "uplink" ) {
@@ -105,7 +107,7 @@ int main( int argc, char *argv[] )
             shell_prefix += "down=";
         }
 
-        shell_prefix += "trace-file] ";
+        shell_prefix += "trace-file=" + trace_file + "] ";
 
         loss_app.start_uplink( shell_prefix,
                                command,
