@@ -18,6 +18,9 @@ void usage_error( const string & program_name )
     cerr << "Usage: " + program_name + " downlink|uplink [OPTION]" << endl;
     cerr << endl;
     cerr << "Options = --trace-file=FILENAME" << endl;
+    cerr << "Options = --configure-file=FILENAME" << endl;
+    cerr << "Trace format: timestamp,delay(half rtt)" << endl;
+    cerr << "Configure file: the webrtc server will save the ip to the file" << endl;
 
     throw runtime_error( "invalid arguments" );
 }
@@ -33,7 +36,7 @@ int main( int argc, char *argv[] )
 
         check_requirements( argc, argv );
 
-        if ( argc < 3 ) {
+        if ( argc < 4 ) {
             usage_error( argv[ 0 ] );
         }
 
@@ -80,8 +83,6 @@ int main( int argc, char *argv[] )
         }
 
         vector<string> command;
-
-        cout << argc << endl;
 
         if ( argc == 4 ) {
             command.push_back( shell_path() );
