@@ -30,4 +30,37 @@ public:
     static bool finished( void ) { return false; }
 };
 
+class DelayTraceQueueCmp
+{
+public:
+    bool operator()( const std::pair<uint64_t, std::string> & lhs, \
+        const std::pair<uint64_t, std::string> & rhs ) const
+    {
+        return lhs.first < rhs.first;
+    }
+};
+
+class DelayTraceQueue
+{
+private:
+    std::vector<uint64_t> schedule_;
+    std::vector<uint64_t> delay_;
+    std::priority_queue< std::pair<uint64_t, std::string>, \
+        std::vector<std::pair<uint64_t, std::string> >, DelayTraceQueueCmp> packet_queue_;
+    uint64_t base_timestamp_;
+    unsigned int next_delivery_;
+
+public:
+    DelayTraceQueue( const std::string & filename );
+
+    void read_packet( const std::string & contents );
+
+    void write_packets( FileDescriptor & fd );
+
+    unsigned int wait_time( void ) const;
+
+    bool pending_output( void ) const { return wait_time() <= 0; }
+
+    static bool finished( void ) { return false; }
+};
 #endif /* DELAY_QUEUE_HH */

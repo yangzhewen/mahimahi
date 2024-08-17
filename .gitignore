@@ -35,6 +35,7 @@ Makefile.in
 /src/frontend/mm-link
 /src/frontend/mm-onoff
 /src/frontend/mm-loss-trace
+/src/frontend/mm-delay-trace
 /src/frontend/mm-intermittent
 /src/frontend/mm-meter
 /src/frontend/mm-webrecord
