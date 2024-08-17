@@ -21,6 +21,10 @@ def prepare_trace_from_hairpin(cfg):
             bandwith_tmp = re.sub(r'[a-zA-Z]', '', line[0])
             rtt_tmp = re.sub(r'[a-zA-Z]', '', line[1])
             lossrate_tmp = re.sub(r'[a-zA-Z]', '', line[2])
+
+            if float(lossrate_tmp) < 0:
+                continue
+
             bandwith.append(float(bandwith_tmp))
             rtt.append(float(rtt_tmp))
             lossrate.append(float(lossrate_tmp))
