@@ -1,6 +1,26 @@
 import argparse
 import re
 import math
+import os
+
+def select_trace(cfg):
+    trace_input_file = cfg.input_file
+    loss_num_threshold = 1000
+    cnt = 0
+
+    for files in os.listdir(trace_input_file):
+        if ("eth" in files) or ("cell" in files) or ("wifi" in files):
+            loss_rate_cnt = 0
+            with open(trace_input_file + "/" + files, "r") as f:
+                for line in f.readlines():
+                    line = line.split(" ")
+                    lossrate_tmp = re.sub(r'[a-zA-Z]', '', line[2])
+                    if float(lossrate_tmp) > 0:
+                        loss_rate_cnt += 1
+                    if loss_rate_cnt > loss_num_threshold:
+                        print(files)
+                        cnt += 1
+                        break
 
 # the format is bandwidth, rtt, lossrate
 def prepare_trace_from_hairpin(cfg):
@@ -74,6 +94,7 @@ def prepare_trace_from_hairpin(cfg):
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--operation", type=str, default="prepare_trace")
     parser.add_argument("--format", type=str, default="hairpin")
     parser.add_argument("--input_file", type=str, default="")
     parser.add_argument("--output_dir", type=str, default="./") 
@@ -81,7 +102,10 @@ def parse_args():
 
 if __name__ == "__main__":
     cfg = parse_args()
-    if cfg.format == "hairpin":
-        prepare_trace_from_hairpin(cfg)
+    if cfg.operation == "prepare_trace":
+        if cfg.format == "hairpin":
+            prepare_trace_from_hairpin(cfg)
+    elif cfg.operation == "select_trace":
+        select_trace(cfg)
     else:
         print("Not supported format")
