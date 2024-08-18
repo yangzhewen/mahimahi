@@ -92,16 +92,23 @@ void DelayTraceQueue::read_packet( const string & contents )
         }
         delay_ms_ = delay_.at(next_delivery_);
     }
-        
-    packet_queue_.emplace( timestamp() + delay_ms_, contents );
+
+    packet_queue_.emplace_back( now + delay_ms_, contents );
 }
 
 void DelayTraceQueue::write_packets( FileDescriptor & fd )
 {
-    while ( (!packet_queue_.empty())
-            && (packet_queue_.top().first <= timestamp()) ) {
-        fd.write( packet_queue_.top().second );
-        packet_queue_.pop();
+    uint64_t now = timestamp();
+
+    for ( auto it = packet_queue_.begin(); it != packet_queue_.end(); )
+    {
+        if ( it->first <= now ) {
+            fd.write( it->second );
+            it = packet_queue_.erase( it );
+        }
+        else {
+            ++it;
+        }
     }
 }
 
@@ -113,9 +120,9 @@ unsigned int DelayTraceQueue::wait_time( void ) const
 
     const auto now = timestamp();
 
-    if ( packet_queue_.top().first <= now ) {
+    if ( packet_queue_.front().first <= now ) {
         return 0;
     } else {
-        return packet_queue_.top().first - now;
+        return packet_queue_.front().first - now;
     }
 }
